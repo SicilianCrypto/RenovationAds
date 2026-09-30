@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Kitchen Consultation</title>
+<script>
+/* ============================================================
+   EDIT THIS FOR EACH CLIENT  (the only line you need to change)
+   Keep " & " with spaces around it if the name has an ampersand,
+   so the brass-colored "&" styling in the header still works.
+   ============================================================ */
+const BUSINESS_NAME = "Bath & Kitchen Renovation";
+/* ============================================================ */
+document.title = BUSINESS_NAME + " — Kitchen Consultation";
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- ============================================================
+     META (FACEBOOK) PIXEL — PASTE YOUR BASE CODE HERE
+     ------------------------------------------------------------
+     Get this from Events Manager > Data Sources > your Pixel >
+     "Set up the Pixel" > paste the base <script> Meta gives you
+     right below this comment. That defines the global fbq()
+     function this page calls later.
+
+     Design note: this page only fires the "Lead" event once a
+     homeowner actually CONFIRMS a calendar slot — not when they
+     submit the qualification form. That's on purpose: a form fill
+     that never converts into a booked call shouldn't count as a
+     lead for ad optimization or billing. See fireLeadEvent() near
+     the bottom of the script for where this happens.
+     ============================================================ -->
+
+<style>
+  :root {
+    --bg: #EFEBE2;
+    --surface: #FBF9F4;
+    --ink: #23261F;
+    --ink-soft: #5C5E52;
+    --brass: #A9793C;
+    --brass-strong: #8F631F;
+    --sage: #5F7052;
+    --border: #DCD4C2;
+    --danger: #A24B3C;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1D1B17;
+      --surface: #27241E;
+      --ink: #F1ECE1;
+      --ink-soft: #C3BBA8;
+      --brass: #CB9E5C;
+      --brass-strong: #E0B475;
+      --sage: #93A582;
+      --border: #3A362C;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1D1B17;
+    --surface: #27241E;
+    --ink: #F1ECE1;
+    --ink-soft: #C3BBA8;
+    --brass: #CB9E5C;
+    --brass-strong: #E0B475;
+    --sage: #93A582;
+    --border: #3A362C;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Archivo', sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 56px 28px 80px; }
+  header.top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 64px; }
+  .mark { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; letter-spacing: -0.01em; }
+  .mark span { color: var(--brass); }
+  .phone-note { font-size: 14px; color: var(--ink-soft); }
+  .grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 64px; align-items: start; }
+  @media (max-width: 880px) {
+    .grid { grid-template-columns: 1fr; gap: 40px; }
+    .wrap { padding: 32px 20px 56px; }
+    header.top { margin-bottom: 40px; }
+  }
+  .hero-copy h1 {
+    font-family: 'Fraunces', serif; font-weight: 500; font-size: clamp(34px, 4.6vw, 54px);
+    line-height: 1.05; letter-spacing: -0.01em; margin: 0 0 22px; max-width: 12ch;
+  }
+  .hero-copy p.lede { font-size: 18px; line-height: 1.55; color: var(--ink-soft); max-width: 46ch; margin: 0 0 36px; }
+  .blueprint { width: 100%; height: auto; display: block; opacity: 0.9; }
+  .blueprint-wrap { margin-top: 12px; border: 1px solid var(--border); border-radius: 4px; padding: 22px; background: color-mix(in srgb, var(--surface) 60%, transparent); }
+  .blueprint-cap { font-size: 13px; color: var(--ink-soft); margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 36px; }
+  .step-label {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.02em; color: var(--brass-strong); background: color-mix(in srgb, var(--brass) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brass) 35%, transparent); padding: 5px 12px; border-radius: 100px; margin-bottom: 18px;
+  }
+  .panel h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 24px; margin: 0 0 6px; }
+  .panel .sub { font-size: 14.5px; color: var(--ink-soft); margin: 0 0 28px; line-height: 1.5; }
+
+  .field { margin-bottom: 20px; }
+  .field label { display: block; font-size: 13.5px; color: var(--ink-soft); margin-bottom: 7px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  input, select, textarea {
+    width: 100%; font-family: 'Archivo', sans-serif; font-size: 15px; color: var(--ink);
+    background: transparent; border: none; border-bottom: 1.5px solid var(--border);
+    padding: 9px 2px; outline: none; transition: border-color 0.15s ease;
+  }
+  select { appearance: none; background: transparent; cursor: pointer; }
+  select option { color: #23261F; }
+  input::placeholder, textarea::placeholder { color: var(--ink-soft); opacity: 0.55; }
+  input:focus, select:focus, textarea:focus { border-bottom-color: var(--brass); }
+  textarea { resize: vertical; min-height: 60px; }
+  .submit-btn {
+    width: 100%; margin-top: 8px; background: var(--brass); color: #FBF9F4; border: none; border-radius: 4px;
+    padding: 15px 20px; font-size: 15px; font-weight: 600; font-family: 'Archivo', sans-serif; cursor: pointer;
+    transition: background 0.15s ease, transform 0.05s ease;
+  }
+  .submit-btn:hover { background: var(--brass-strong); }
+  .submit-btn:active { transform: scale(0.99); }
+  .submit-btn:disabled { opacity: 0.6; cursor: default; }
+  .privacy-note { font-size: 12.5px; color: var(--ink-soft); margin-top: 14px; text-align: center; }
+  .error-note { margin-top: 16px; font-size: 13.5px; color: var(--danger); display: none; }
+  .error-note.show { display: block; }
+
+  /* Field-level validation errors (email / phone) */
+  .field-error { font-size: 12px; color: var(--danger); margin-top: 5px; display: none; }
+  .field-error.show { display: block; }
+
+  /* Subtle post-fill reminder */
+  .subtle-reminder {
+    display: flex; align-items: center; gap: 8px; margin-top: 4px; margin-bottom: 4px;
+    font-size: 12.5px; color: var(--ink-soft); opacity: 0; max-height: 0; overflow: hidden;
+    transition: opacity 0.25s ease;
+  }
+  .subtle-reminder.show { opacity: 1; max-height: 60px; margin-bottom: 6px; }
+  .reminder-badge {
+    flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%;
+    background: color-mix(in srgb, var(--brass) 22%, transparent); color: var(--brass-strong);
+    font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Decline / hard-exit state */
+  .decline-box { text-align: center; padding: 20px 6px 6px; }
+  .decline-box .result-badge {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600;
+    padding: 6px 12px; border-radius: 100px; margin-bottom: 16px;
+    background: color-mix(in srgb, var(--brass) 22%, transparent); color: var(--brass-strong);
+  }
+  .decline-box .result-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .decline-box h3 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 19px; margin: 0 0 10px; text-align: left; }
+  .decline-box p { font-size: 14.5px; line-height: 1.6; color: var(--ink-soft); margin: 0 0 6px; text-align: left; }
+  .decline-box .next-step { margin-top: 14px; padding: 14px 16px; background: var(--bg); border-radius: 4px; font-size: 14px; color: var(--ink); text-align: left; }
+  .start-over-btn {
+    margin-top: 20px; background: none; border: 1px solid var(--border); color: var(--ink);
+    padding: 10px 16px; border-radius: 4px; font-family: 'Archivo', sans-serif; font-size: 13.5px; cursor: pointer;
+  }
+  .start-over-btn:hover { border-color: var(--brass); color: var(--brass-strong); }
+
+  /* Calendar step */
+  .confirming-as {
+    font-size: 13px; color: var(--ink-soft); margin-bottom: 20px; padding: 10px 12px;
+    background: var(--bg); border-radius: 4px;
+  }
+  .confirming-as b { color: var(--ink); }
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .cal-month { font-family: 'Fraunces', serif; font-weight: 500; font-size: 16px; }
+  .cal-nav button {
+    background: none; border: 1px solid var(--border); color: var(--ink);
+    width: 30px; height: 30px; border-radius: 4px; cursor: pointer; font-size: 15px;
+  }
+  .cal-nav button:hover { border-color: var(--brass); color: var(--brass-strong); }
+  .cal-nav button:disabled { opacity: 0.3; cursor: default; }
+  .dow-row, .day-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .dow-row { margin-bottom: 6px; }
+  .dow-row span { text-align: center; font-size: 11.5px; color: var(--ink-soft); font-weight: 500; }
+  .day-grid { margin-bottom: 24px; }
+  .day-grid button {
+    aspect-ratio: 1; border: none; background: transparent; color: var(--ink);
+    font-family: 'Archivo', sans-serif; font-size: 13.5px; border-radius: 5px; cursor: pointer;
+  }
+  .day-grid button:not(:disabled):hover { background: color-mix(in srgb, var(--brass) 14%, transparent); }
+  .day-grid button:disabled { color: var(--ink-soft); opacity: 0.28; cursor: default; }
+  .day-grid button.selected { background: var(--brass); color: #FBF9F4; font-weight: 600; }
+  .day-grid button.empty { visibility: hidden; }
+  .slots-title { font-size: 13.5px; color: var(--ink-soft); margin-bottom: 14px; }
+  .slot-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 6px; }
+  .slot-list button {
+    border: 1px solid var(--border); background: transparent; color: var(--ink);
+    font-family: 'Archivo', sans-serif; font-size: 13.5px; padding: 10px 8px; border-radius: 5px; cursor: pointer;
+  }
+  .slot-list button:hover { border-color: var(--brass); }
+  .slot-list button.selected { background: var(--brass); border-color: var(--brass); color: #FBF9F4; font-weight: 600; }
+  .empty-note { font-size: 13.5px; color: var(--ink-soft); padding: 10px 0 0; }
+  .confirm-box { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+  .booked-state { text-align: center; padding: 20px 6px 6px; }
+  .booked-state .check { font-size: 30px; margin-bottom: 12px; }
+  .booked-state h3 { font-family: 'Fraunces', serif; font-size: 19px; margin: 0 0 8px; font-weight: 500; }
+  .booked-state p { font-size: 13.5px; color: var(--ink-soft); line-height: 1.5; margin: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="mark" id="brandName"></div>
+    <div class="phone-note">Serving the Greater Montréal area</div>
+  </header>
+
+  <div class="grid">
+    <div class="hero-copy">
+      <h1>Tell us about your kitchen. We'll tell you what's possible.</h1>
+      <p class="lede">Two minutes of questions gets you a real recommendation — not a generic quote. We only take on projects we're confident we can deliver well, so we ask a few things up front before booking a consultation.</p>
+
+      <div class="blueprint-wrap">
+        <svg class="blueprint" viewBox="0 0 420 260" xmlns="http://www.w3.org/2000/svg">
+          <g fill="none" stroke="var(--ink)" stroke-width="1.4">
+            <rect x="14" y="14" width="392" height="232" rx="2" stroke-opacity="0.35"/>
+            <path d="M14 14 L14 130 L110 130 L110 246" stroke-opacity="0.55"/>
+            <rect x="24" y="24" width="70" height="28" stroke-opacity="0.5"/>
+            <rect x="24" y="60" width="70" height="60" stroke-opacity="0.5"/>
+            <line x1="24" y1="90" x2="94" y2="90" stroke-opacity="0.3"/>
+            <rect x="150" y="150" width="130" height="60" rx="1" stroke-opacity="0.55"/>
+            <line x1="150" y1="180" x2="280" y2="180" stroke-opacity="0.3"/>
+            <circle cx="185" cy="165" r="6" stroke-opacity="0.4"/>
+            <circle cx="205" cy="165" r="6" stroke-opacity="0.4"/>
+            <rect x="320" y="24" width="66" height="90" stroke-opacity="0.5"/>
+            <line x1="320" y1="69" x2="386" y2="69" stroke-opacity="0.3"/>
+            <path d="M110 130 L406 130" stroke-opacity="0.2" stroke-dasharray="2 4"/>
+          </g>
+        </svg>
+        <div class="blueprint-cap">Every renovation starts as a plan on paper — this one starts with yours.</div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel">
+      <!-- ===================== STEP 1: FORM ===================== -->
+      <div id="stepForm">
+        <div class="step-label">STEP 1 OF 2</div>
+        <h2>Request your consultation</h2>
+        <p class="sub">Fill this out and we'll follow up within one business day.</p>
+
+        <form id="leadForm">
+          <div class="field">
+            <label for="name">Full name</label>
+            <input id="name" required placeholder="Jordan Ellis" />
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="email">Email</label>
+              <input id="email" type="email" required placeholder="you@email.com" />
+              <p class="field-error" id="emailError"></p>
+            </div>
+            <div class="field">
+              <label for="phone">Phone number</label>
+              <input id="phone" type="tel" required placeholder="(514) 204-7788" />
+              <p class="field-error" id="phoneError"></p>
+            </div>
+          </div>
+          <div class="field">
+            <label for="timeline">When would you like your kitchen renovated?</label>
+            <select id="timeline" required>
+              <option value="" disabled selected>Select a timeframe</option>
+              <option value="As soon as possible">As soon as possible</option>
+              <option value="Within 1-3 months">Within 1-3 months</option>
+              <option value="3-6 months">3-6 months</option>
+              <option value="Just exploring, no firm date">Just exploring, no firm date</option>
+            </select>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="budget">Estimated budget</label>
+              <select id="budget" required>
+                <option value="" disabled selected>Select a range</option>
+                <option value="Under $5,000">Under $5,000</option>
+                <option value="$5,000-$15,000">$5,000-$15,000</option>
+                <option value="$15,000-$35,000">$15,000-$35,000</option>
+                <option value="$35,000-$75,000">$35,000-$75,000</option>
+                <option value="$75,000+">$75,000+</option>
+                <option value="Not sure yet">Not sure yet</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="scope">Scope of the project</label>
+              <select id="scope" required>
+                <option value="" disabled selected>Select scope</option>
+                <option value="Full gut renovation">Full gut renovation</option>
+                <option value="Kitchen/Bathroom Remodeling">Kitchen/Bathroom Remodeling</option>
+                <option value="Cabinets and countertops only">Cabinets and countertops only</option>
+                <option value="Cosmetic refresh (paint, hardware, fixtures)">Cosmetic refresh (paint, hardware, fixtures)</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="owns">Do you own this home?</label>
+              <select id="owns" required>
+                <option value="" disabled selected>Select one</option>
+                <option value="Yes, I own it">Yes, I own it</option>
+                <option value="No, I rent">No, I rent</option>
+                <option value="I'm the landlord/property manager">I'm the landlord/property manager</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="city">City or postal code</label>
+              <input id="city" required placeholder="Montréal, QC" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="notes">Anything else about the project?</label>
+            <textarea id="notes" placeholder="Open concept, new appliances, matching an existing style, etc."></textarea>
+            <div class="subtle-reminder" id="subtleReminder">
+              <span class="reminder-badge">!</span>
+              <span>Quick check before you submit — please make sure your name, email, and phone number above are accurate. That's how we'll reach you.</span>
+            </div>
+          </div>
+
+          <button type="submit" class="submit-btn" id="submitBtn">Request my consultation</button>
+          <p class="privacy-note">Your information is only used to follow up about this project.</p>
+          <p class="error-note" id="errorNote">Something went wrong reviewing your request — please try again.</p>
+        </form>
+      </div>
+
+      <!-- ============== HARD EXIT STATE (ownership / budget / timeline) ============== -->
+      <div id="stepHardExit" style="display:none;">
+        <div class="decline-box">
+          <div class="result-badge"><span class="dot"></span><span>Unable to proceed</span></div>
+          <h3 id="hardExitHeadline"></h3>
+          <p id="hardExitBody"></p>
+          <button class="submit-btn" id="hardExitBtn" style="margin-top:18px;">Close This Page</button>
+          <p class="privacy-note">If this window doesn't close automatically, feel free to close this browser tab.</p>
+        </div>
+      </div>
+
+      <!-- ===================== STEP 2: CALENDAR ===================== -->
+      <div id="stepCalendar" style="display:none;">
+        <div class="step-label">STEP 2 OF 2</div>
+        <h2>Book your consultation</h2>
+        <p class="sub" id="qualifiedHeadline"></p>
+
+        <div class="confirming-as" id="confirmingAs"></div>
+
+        <div class="cal-nav">
+          <button id="prevMonth">‹</button>
+          <div class="cal-month" id="monthLabel"></div>
+          <button id="nextMonth">›</button>
+        </div>
+        <div class="dow-row"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+        <div class="day-grid" id="dayGrid"></div>
+
+        <div id="rightPanel"><div class="empty-note">Select a date to see available times.</div></div>
+      </div>
+
+      <!-- ===================== BOOKED STATE ===================== -->
+      <div id="stepBooked" style="display:none;">
+        <div class="booked-state">
+          <div class="check">✅</div>
+          <h3>You're booked</h3>
+          <p id="bookedDetails"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Fill in the business name in the header (keeps the brass "&" styling) */
+(function renderBrand() {
+  const el = document.getElementById('brandName');
+  el.textContent = '';
+  BUSINESS_NAME.split(' & ').forEach((part, i) => {
+    if (i > 0) {
+      const amp = document.createElement('span');
+      amp.textContent = '&';
+      el.append(' ', amp, ' ');
+    }
+    el.append(part);
+  });
+})();
+/* ============================================================
+   STATE
+   ============================================================ */
+const lead = {}; // populated from the form on submit
+const cal = { monthOffset: 0, selectedDate: null, selectedTime: null };
+const TIMES = ["9:00 AM","9:30 AM","10:00 AM","10:30 AM","11:00 AM","11:30 AM","1:00 PM","1:30 PM","2:00 PM","2:30 PM","3:00 PM","3:30 PM","4:00 PM","4:30 PM"];
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+// Budgets below this are hard-disqualified — no AI call is spent on them.
+const HARD_DISQUALIFY_BUDGETS = ["Under $5,000"];
+
+function budgetMidpoint(budget) {
+  const map = {
+    "$5,000-$15,000": 10000,
+    "$15,000-$35,000": 25000,
+    "$35,000-$75,000": 55000,
+    "$75,000+": 90000,
+    "Not sure yet": 20000,
+  };
+  return map[budget] || 0;
+}
+
+function showStep(name) {
+  document.getElementById('stepForm').style.display = name === 'form' ? '' : 'none';
+  document.getElementById('stepHardExit').style.display = name === 'hardExit' ? '' : 'none';
+  document.getElementById('stepCalendar').style.display = name === 'calendar' ? '' : 'none';
+  document.getElementById('stepBooked').style.display = name === 'booked' ? '' : 'none';
+  document.getElementById('panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ============================================================
+   VALIDATION: email format + North American (US/Canada) phone
+   ============================================================
+   Note: this checks FORMAT and rules out obvious placeholders —
+   it cannot confirm a number is real/reachable (that needs a
+   paid lookup service like Twilio Lookup). It rejects:
+     - anything that isn't a 10-digit US/Canada (NANP) number
+     - invalid area codes / N11 service codes (211, 911, etc.)
+     - the classic fake "555" exchange
+     - all-identical-digit and perfectly sequential numbers
+     - NANP area codes belonging to Caribbean nations, not US/Canada
+   ============================================================ */
+const EMAIL_RE = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+
+function isValidEmailFormat(str) {
+  return EMAIL_RE.test((str || '').trim());
+}
+
+const NON_US_CA_AREA_CODES = new Set([
+  '242','246','264','268','284','345','441','473','649','658',
+  '664','721','758','767','784','809','829','849','868','869','876'
+]);
+
+function isValidNANPPhone(raw) {
+  let d = (raw || '').replace(/\D/g, '');
+  if (d.length === 11) {
+    if (d[0] !== '1') return false;
+    d = d.slice(1);
+  }
+  if (d.length !== 10) return false;
+
+  const area = d.slice(0, 3);
+  const exch = d.slice(3, 6);
+
+  const validGroup = /^[2-9]\d{2}$/;
+  const n11 = /^[2-9]11$/;
+
+  if (!validGroup.test(area) || n11.test(area)) return false;
+  if (!validGroup.test(exch) || n11.test(exch)) return false;
+  if (NON_US_CA_AREA_CODES.has(area)) return false;
+  if (exch === '555') return false;
+  if (/^(\d)\1{9}$/.test(d)) return false;
+  if (['0123456789', '1234567890', '9876543210', '0987654321'].includes(d)) return false;
+
+  return true;
+}
+
+function showFieldError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function clearFieldError(id) {
+  const el = document.getElementById(id);
+  el.textContent = '';
+  el.classList.remove('show');
+}
+document.getElementById('email').addEventListener('input', () => clearFieldError('emailError'));
+document.getElementById('phone').addEventListener('input', () => clearFieldError('phoneError'));
+
+/* ============================================================
+   SUBTLE POST-FILL REMINDER
+   ============================================================ */
+function checkFormCompleteness() {
+  const requiredIds = ['name', 'email', 'phone', 'timeline', 'budget', 'scope', 'owns', 'city'];
+  const allFilled = requiredIds.every(id => document.getElementById(id).value.trim() !== '');
+  document.getElementById('subtleReminder').classList.toggle('show', allFilled);
+}
+document.getElementById('leadForm').addEventListener('input', checkFormCompleteness);
+document.getElementById('leadForm').addEventListener('change', checkFormCompleteness);
+
+/* ============================================================
+   IMMEDIATE HARD-EXIT GATES (fire the moment the option is picked,
+   before the rest of the form is even filled out)
+   ============================================================ */
+function showHardExit(headline, body) {
+  document.getElementById('hardExitHeadline').textContent = headline;
+  document.getElementById('hardExitBody').textContent = body;
+  showStep('hardExit');
+}
+
+document.getElementById('owns').addEventListener('change', function () {
+  if (this.value === "No, I rent") {
+    showHardExit(
+      "We're only able to work with homeowners",
+      `Thank you for your interest in ${BUSINESS_NAME}. At this time, we work exclusively with homeowners renovating a property they own, so we're unable to move forward with your request.`
+    );
+  }
+});
+
+document.getElementById('budget').addEventListener('change', function () {
+  if (this.value === "Under $5,000") {
+    showHardExit(
+      "This falls below our minimum project size",
+      "We appreciate you reaching out. Our minimum project size currently starts at $5,000, so we're not able to take this project on right now — we'd rather be upfront than take on work we can't give our full attention to."
+    );
+  }
+});
+
+document.getElementById('timeline').addEventListener('change', function () {
+  if (this.value === "Just exploring, no firm date") {
+    showHardExit(
+      "Let's reconnect when timing is right",
+      "Thanks for reaching out. Right now we're focused on connecting with homeowners who are ready to move forward with a project, so this may not be the best time for us to work together. Feel free to reach back out once your timeline firms up."
+    );
+  }
+});
+
+document.getElementById('hardExitBtn').addEventListener('click', () => {
+  try { window.close(); } catch (e) { /* some browsers block this — the fallback note covers it */ }
+});
+
+/* ============================================================
+   STEP 1 -> QUALIFICATION
+   ============================================================ */
+function handleSubmit(e) {
+  e.preventDefault();
+  const errorNote = document.getElementById('errorNote');
+  errorNote.classList.remove('show');
+
+  clearFieldError('emailError');
+  clearFieldError('phoneError');
+  const emailVal = document.getElementById('email').value;
+  const phoneVal = document.getElementById('phone').value;
+  let hasFieldError = false;
+  if (!isValidEmailFormat(emailVal)) {
+    showFieldError('emailError', 'Please enter a valid email address.');
+    hasFieldError = true;
+  }
+  if (!isValidNANPPhone(phoneVal)) {
+    showFieldError('phoneError', 'Please enter a valid U.S. or Canadian phone number.');
+    hasFieldError = true;
+  }
+  if (hasFieldError) return;
+
+  Object.assign(lead, {
+    name: document.getElementById('name').value,
+    email: emailVal,
+    phone: phoneVal,
+    timeline: document.getElementById('timeline').value,
+    budget: document.getElementById('budget').value,
+    scope: document.getElementById('scope').value,
+    owns: document.getElementById('owns').value,
+    city: document.getElementById('city').value,
+    notes: document.getElementById('notes').value || 'none provided',
+  });
+
+  // Safety-net: these three should already be caught live by the
+  // on-change gates above, but they're re-checked here in case of
+  // programmatic changes (e.g. browser autofill skipping events).
+  if (HARD_DISQUALIFY_BUDGETS.includes(lead.budget)) {
+    showHardExit(
+      "This falls below our minimum project size",
+      "We appreciate you reaching out. Our minimum project size currently starts at $5,000, so we're not able to take this project on right now — we'd rather be upfront than take on work we can't give our full attention to."
+    );
+    return;
+  }
+  if (lead.owns === "No, I rent") {
+    showHardExit(
+      "We're only able to work with homeowners",
+      `Thank you for your interest in ${BUSINESS_NAME}. At this time, we work exclusively with homeowners renovating a property they own, so we're unable to move forward with your request.`
+    );
+    return;
+  }
+  if (lead.timeline === "Just exploring, no firm date") {
+    showHardExit(
+      "Let's reconnect when timing is right",
+      "Thanks for reaching out. Right now we're focused on connecting with homeowners who are ready to move forward with a project, so this may not be the best time for us to work together. Feel free to reach back out once your timeline firms up."
+    );
+    return;
+  }
+
+  // Everyone who clears the gates above goes straight to booking —
+  // no external service in the loop, so nothing here can fail at
+  // the moment a real homeowner is filling this out.
+  renderCalendarStep();
+}
+document.getElementById('leadForm').addEventListener('submit', handleSubmit);
+
+/* ============================================================
+   STEP 2 -> CALENDAR
+   ============================================================ */
+function renderCalendarStep() {
+  document.getElementById('qualifiedHeadline').textContent = "Great — let's find a time to talk.";
+  document.getElementById('confirmingAs').innerHTML =
+    `Booking as <b>${escapeHtml(lead.name)}</b> — <b>${escapeHtml(lead.email)}</b>`;
+
+  // Optional: uncomment if you want Meta to see "qualified, entered
+  // booking step" as its own signal before a slot is actually confirmed.
+  // if (typeof fbq === 'function') fbq('trackCustom', 'QualifiedEnteredBooking');
+
+  cal.monthOffset = 0;
+  cal.selectedDate = null;
+  cal.selectedTime = null;
+  showStep('calendar');
+  renderCalendar();
+  renderRightPanel();
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function today() { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }
+
+function renderCalendar() {
+  const base = today();
+  const viewDate = new Date(base.getFullYear(), base.getMonth() + cal.monthOffset, 1);
+  document.getElementById('monthLabel').textContent = MONTH_NAMES[viewDate.getMonth()] + " " + viewDate.getFullYear();
+  document.getElementById('prevMonth').disabled = cal.monthOffset <= 0;
+  document.getElementById('nextMonth').disabled = cal.monthOffset >= 2;
+
+  const grid = document.getElementById('dayGrid');
+  grid.innerHTML = '';
+  const firstDow = viewDate.getDay();
+  const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
+
+  for (let i = 0; i < firstDow; i++) {
+    const b = document.createElement('button');
+    b.className = 'empty'; b.disabled = true;
+    grid.appendChild(b);
+  }
+  for (let day = 1; day <= daysInMonth; day++) {
+    const d = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
+    const btn = document.createElement('button');
+    btn.textContent = day;
+    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+    const isPast = d < base;
+    if (isWeekend || isPast) {
+      btn.disabled = true;
+    } else {
+      btn.addEventListener('click', () => selectDate(d));
+    }
+    if (cal.selectedDate && d.getTime() === cal.selectedDate.getTime()) btn.classList.add('selected');
+    grid.appendChild(btn);
+  }
+}
+
+function selectDate(d) {
+  cal.selectedDate = d;
+  cal.selectedTime = null;
+  renderCalendar();
+  renderRightPanel();
+}
+
+function selectTime(t) {
+  cal.selectedTime = t;
+  renderRightPanel();
+}
+
+function renderRightPanel() {
+  const panel = document.getElementById('rightPanel');
+  if (!cal.selectedDate) {
+    panel.innerHTML = '<div class="empty-note">Select a date to see available times.</div>';
+    return;
+  }
+  let html = `<div class="slots-title">${formatDate(cal.selectedDate)}</div><div class="slot-list">`;
+  TIMES.forEach(t => {
+    html += `<button class="${cal.selectedTime === t ? 'selected' : ''}" data-time="${t}">${t}</button>`;
+  });
+  html += `</div>`;
+  if (cal.selectedTime) {
+    html += `<div class="confirm-box"><button class="submit-btn" id="confirmBtn">Confirm booking</button></div>`;
+  }
+  panel.innerHTML = html;
+
+  panel.querySelectorAll('.slot-list button').forEach(btn => {
+    btn.addEventListener('click', () => selectTime(btn.dataset.time));
+  });
+  const confirmBtn = document.getElementById('confirmBtn');
+  if (confirmBtn) confirmBtn.addEventListener('click', confirmBooking);
+}
+
+function formatDate(d) {
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+document.getElementById('prevMonth').addEventListener('click', () => { if (cal.monthOffset > 0) { cal.monthOffset--; renderCalendar(); } });
+document.getElementById('nextMonth').addEventListener('click', () => { if (cal.monthOffset < 2) { cal.monthOffset++; renderCalendar(); } });
+
+/* ============================================================
+   BOOKING CONFIRMED -> THIS is "a lead"
+   ============================================================ */
+function confirmBooking() {
+  document.getElementById('bookedDetails').textContent =
+    `${formatDate(cal.selectedDate)} at ${cal.selectedTime}. We'll be in touch to confirm the details.`;
+  showStep('booked');
+  fireLeadEvent();
+}
+
+function fireLeadEvent() {
+  try {
+    if (typeof fbq === 'function') {
+      fbq('track', 'Lead', {
+        content_name: 'Kitchen Renovation Consultation',
+        value: budgetMidpoint(lead.budget),
+        currency: 'CAD'
+      });
+    }
+    // If fbq isn't defined yet, nothing breaks — just add your Meta
+    // Pixel base code in <head> (see the comment up top) to activate this.
+  } catch (e) { /* fail silently — never block the booked confirmation on pixel issues */ }
+}
+</script>
+</body>
+</html>
