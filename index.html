@@ -10,7 +10,12 @@
    Keep " & " with spaces around it if the name has an ampersand,
    so the brass-colored "&" styling in the header still works.
    ============================================================ */
-const BUSINESS_NAME = "Bath & Kitchen Renovation";
+const BUSINESS_NAME = "Kitchen & Bath Renovations";
+
+/* Paste your Formspree form address between the quotes, e.g.
+   "https://formspree.io/f/abc123xyz"  -- leads are emailed to you.
+   Leave it as-is and the page still works; it just won't email leads. */
+const FORMSPREE_URL = "https://formspree.io/f/xkjgeywq";
 /* ============================================================ */
 document.title = BUSINESS_NAME + " — Kitchen Consultation";
 </script>
@@ -591,10 +596,40 @@ function handleSubmit(e) {
     return;
   }
 
-  // Everyone who clears the gates above goes straight to booking —
-  // no external service in the loop, so nothing here can fail at
-  // the moment a real homeowner is filling this out.
+  // Everyone who clears the gates above goes straight to booking.
+  // The lead is emailed to you in the background; if that ever fails,
+  // the homeowner never sees it and still moves on to the calendar.
+  sendToFormspree('Qualified, reached calendar (not booked yet)');
   renderCalendarStep();
+}
+
+/* ============================================================
+   EMAIL THE LEAD TO YOU (via Formspree) -- never blocks the page
+   ============================================================ */
+function sendToFormspree(stage, extra) {
+  try {
+    if (!FORMSPREE_URL || FORMSPREE_URL.indexOf('PASTE_') === 0) return;
+    const payload = Object.assign({
+      _subject: 'New lead (' + stage + ') - ' + BUSINESS_NAME,
+      stage: stage,
+      business: BUSINESS_NAME,
+      name: lead.name,
+      email: lead.email,
+      phone: lead.phone,
+      timeline: lead.timeline,
+      budget: lead.budget,
+      scope: lead.scope,
+      owns_home: lead.owns,
+      city: lead.city,
+      notes: lead.notes,
+      page: window.location.href
+    }, extra || {});
+    fetch(FORMSPREE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(function () { /* fail silently */ });
+  } catch (e) { /* fail silently */ }
 }
 document.getElementById('leadForm').addEventListener('submit', handleSubmit);
 
@@ -708,6 +743,10 @@ function confirmBooking() {
   document.getElementById('bookedDetails').textContent =
     `${formatDate(cal.selectedDate)} at ${cal.selectedTime}. We'll be in touch to confirm the details.`;
   showStep('booked');
+  sendToFormspree('BOOKED a time', {
+    requested_date: formatDate(cal.selectedDate),
+    requested_time: cal.selectedTime
+  });
   fireLeadEvent();
 }
 
