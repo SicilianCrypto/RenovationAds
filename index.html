@@ -12,6 +12,14 @@
    ============================================================ */
 const BUSINESS_NAME = "Kitchen & Bath Renovations";
 
+/* French version of the business name shown on the French page. */
+const BUSINESS_NAME_FR = "Rénovations Cuisine & Salle de bain";
+
+/* Language shown to first-time visitors: "fr" or "en".
+   A visitor's own choice (the language button) is remembered, and
+   a link ending in ?lang=en or ?lang=fr overrides it. */
+const DEFAULT_LANG = "fr";
+
 /* Paste your Formspree form address between the quotes, e.g.
    "https://formspree.io/f/abc123xyz"  -- leads are emailed to you.
    Leave it as-is and the page still works; it just won't email leads. */
@@ -42,6 +50,25 @@ document.title = BUSINESS_NAME + " — Kitchen Consultation";
      lead for ad optimization or billing. See fireLeadEvent() near
      the bottom of the script for where this happens.
      ============================================================ -->
+
+<!-- Meta Pixel: loads ONLY after the visitor clicks "Accept" in the cookie banner -->
+<script>
+const META_PIXEL_ID = '1624636202378366';
+function loadMetaPixel() {
+  if (window.fbq) return;
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', META_PIXEL_ID);
+  fbq('track', 'PageView');
+}
+</script>
+<!-- End Meta Pixel -->
 
 <style>
   :root {
@@ -218,19 +245,63 @@ document.title = BUSINESS_NAME + " — Kitchen Consultation";
   .booked-state .check { font-size: 30px; margin-bottom: 12px; }
   .booked-state h3 { font-family: 'Fraunces', serif; font-size: 19px; margin: 0 0 8px; font-weight: 500; }
   .booked-state p { font-size: 13.5px; color: var(--ink-soft); line-height: 1.5; margin: 0; }
+
+  /* Cookie banner + footer */
+  .foot { margin-top: 48px; text-align: center; font-size: 13px; color: var(--ink-soft); }
+  .foot a { color: var(--ink-soft); }
+  .foot a:hover { color: var(--brass-strong); }
+  .cookie-banner {
+    display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000;
+    justify-content: center; padding: 16px; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    pointer-events: none;
+  }
+  .cookie-card {
+    pointer-events: auto; max-width: 720px; width: 100%; background: var(--surface); color: var(--ink);
+    border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.18);
+    display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+  }
+  .cookie-card p { flex: 1 1 320px; margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); }
+  .cookie-card p b { color: var(--ink); font-weight: 600; }
+  .cookie-card a { color: var(--brass-strong); }
+  .cookie-actions { display: flex; gap: 10px; flex: 0 0 auto; }
+  .cookie-actions button {
+    font-family: 'Archivo', sans-serif; font-size: 14px; font-weight: 600; padding: 10px 18px;
+    border-radius: 5px; cursor: pointer; border: 1px solid var(--brass);
+  }
+  #cookieAccept { background: var(--brass); color: #FBF9F4; }
+  #cookieAccept:hover { background: var(--brass-strong); border-color: var(--brass-strong); }
+  #cookieDecline { background: transparent; color: var(--ink); border-color: var(--border); }
+  #cookieDecline:hover { border-color: var(--brass); color: var(--brass-strong); }
+  @media (max-width: 560px) {
+    .cookie-actions { width: 100%; }
+    .cookie-actions button { flex: 1; }
+  }
+
+  /* Language toggle */
+  .top-right { display: flex; align-items: center; gap: 18px; }
+  .lang-toggle {
+    background: none; border: 1px solid var(--border); color: var(--ink); border-radius: 100px;
+    padding: 6px 14px; font-family: 'Archivo', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer;
+  }
+  .lang-toggle:hover { border-color: var(--brass); color: var(--brass-strong); }
+  @media (max-width: 560px) { .phone-note { display: none; } }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="top">
     <div class="mark" id="brandName"></div>
-    <div class="phone-note">Serving the Greater Montréal area</div>
+    <div class="top-right">
+      <div class="phone-note" data-i18n="serving">Serving the Greater Montréal area</div>
+      <button type="button" class="lang-toggle" id="langToggle"></button>
+    </div>
   </header>
 
   <div class="grid">
     <div class="hero-copy">
-      <h1>Tell us about your kitchen. We'll tell you what's possible.</h1>
-      <p class="lede">Two minutes of questions gets you a real recommendation — not a generic quote. We only take on projects we're confident we can deliver well, so we ask a few things up front before booking a consultation.</p>
+      <h1 data-i18n="hero_h1"></h1>
+      <p class="lede" data-i18n="hero_lede"></p>
 
       <div class="blueprint-wrap">
         <svg class="blueprint" viewBox="0 0 420 260" xmlns="http://www.w3.org/2000/svg">
@@ -249,139 +320,350 @@ document.title = BUSINESS_NAME + " — Kitchen Consultation";
             <path d="M110 130 L406 130" stroke-opacity="0.2" stroke-dasharray="2 4"/>
           </g>
         </svg>
-        <div class="blueprint-cap">Every renovation starts as a plan on paper — this one starts with yours.</div>
+        <div class="blueprint-cap" data-i18n="blueprint_cap"></div>
       </div>
     </div>
 
     <div class="panel" id="panel">
       <!-- ===================== STEP 1: FORM ===================== -->
       <div id="stepForm">
-        <div class="step-label">STEP 1 OF 2</div>
-        <h2>Request your consultation</h2>
-        <p class="sub">Fill this out and we'll follow up within one business day.</p>
+        <div class="step-label" data-i18n="step1"></div>
+        <h2 data-i18n="form_h2"></h2>
+        <p class="sub" data-i18n="form_sub"></p>
 
         <form id="leadForm">
           <div class="field">
-            <label for="name">Full name</label>
-            <input id="name" required placeholder="Jordan Ellis" />
+            <label for="name" data-i18n="lbl_name"></label>
+            <input id="name" required data-i18n-ph="ph_name" placeholder="Jordan Ellis" />
           </div>
           <div class="row2">
             <div class="field">
-              <label for="email">Email</label>
-              <input id="email" type="email" required placeholder="you@email.com" />
+              <label for="email" data-i18n="lbl_email"></label>
+              <input id="email" type="email" required data-i18n-ph="ph_email" placeholder="you@email.com" />
               <p class="field-error" id="emailError"></p>
             </div>
             <div class="field">
-              <label for="phone">Phone number</label>
-              <input id="phone" type="tel" required placeholder="(514) 204-7788" />
+              <label for="phone" data-i18n="lbl_phone"></label>
+              <input id="phone" type="tel" required data-i18n-ph="ph_phone" placeholder="(514) 204-7788" />
               <p class="field-error" id="phoneError"></p>
             </div>
           </div>
           <div class="field">
-            <label for="timeline">When would you like your kitchen renovated?</label>
+            <label for="timeline" data-i18n="lbl_timeline"></label>
             <select id="timeline" required>
-              <option value="" disabled selected>Select a timeframe</option>
-              <option value="As soon as possible">As soon as possible</option>
-              <option value="Within 1-3 months">Within 1-3 months</option>
-              <option value="3-6 months">3-6 months</option>
-              <option value="Just exploring, no firm date">Just exploring, no firm date</option>
+              <option value="" disabled selected data-i18n="o_select_time"></option>
+              <option value="As soon as possible" data-i18n="t_asap"></option>
+              <option value="Within 1-3 months" data-i18n="t_1_3"></option>
+              <option value="3-6 months" data-i18n="t_3_6"></option>
+              <option value="Just exploring, no firm date" data-i18n="t_explore"></option>
             </select>
           </div>
           <div class="row2">
             <div class="field">
-              <label for="budget">Estimated budget</label>
+              <label for="budget" data-i18n="lbl_budget"></label>
               <select id="budget" required>
-                <option value="" disabled selected>Select a range</option>
-                <option value="Under $5,000">Under $5,000</option>
-                <option value="$5,000-$15,000">$5,000-$15,000</option>
-                <option value="$15,000-$35,000">$15,000-$35,000</option>
-                <option value="$35,000-$75,000">$35,000-$75,000</option>
-                <option value="$75,000+">$75,000+</option>
-                <option value="Not sure yet">Not sure yet</option>
+                <option value="" disabled selected data-i18n="o_select_range"></option>
+                <option value="Under $5,000" data-i18n="b_under5"></option>
+                <option value="$5,000-$15,000" data-i18n="b_5_15"></option>
+                <option value="$15,000-$35,000" data-i18n="b_15_35"></option>
+                <option value="$35,000-$75,000" data-i18n="b_35_75"></option>
+                <option value="$75,000+" data-i18n="b_75"></option>
+                <option value="Not sure yet" data-i18n="b_unsure"></option>
               </select>
             </div>
             <div class="field">
-              <label for="scope">Scope of the project</label>
+              <label for="scope" data-i18n="lbl_scope"></label>
               <select id="scope" required>
-                <option value="" disabled selected>Select scope</option>
-                <option value="Full gut renovation">Full gut renovation</option>
-                <option value="Kitchen/Bathroom Remodeling">Kitchen/Bathroom Remodeling</option>
-                <option value="Cabinets and countertops only">Cabinets and countertops only</option>
-                <option value="Cosmetic refresh (paint, hardware, fixtures)">Cosmetic refresh (paint, hardware, fixtures)</option>
-                <option value="Other">Other</option>
+                <option value="" disabled selected data-i18n="o_select_scope"></option>
+                <option value="Full gut renovation" data-i18n="s_gut"></option>
+                <option value="Kitchen/Bathroom Remodeling" data-i18n="s_remodel"></option>
+                <option value="Cabinets and countertops only" data-i18n="s_cab"></option>
+                <option value="Cosmetic refresh (paint, hardware, fixtures)" data-i18n="s_cosm"></option>
+                <option value="Other" data-i18n="s_other"></option>
               </select>
             </div>
           </div>
           <div class="row2">
             <div class="field">
-              <label for="owns">Do you own this home?</label>
+              <label for="owns" data-i18n="lbl_owns"></label>
               <select id="owns" required>
-                <option value="" disabled selected>Select one</option>
-                <option value="Yes, I own it">Yes, I own it</option>
-                <option value="No, I rent">No, I rent</option>
-                <option value="I'm the landlord/property manager">I'm the landlord/property manager</option>
+                <option value="" disabled selected data-i18n="o_select_one"></option>
+                <option value="Yes, I own it" data-i18n="ow_yes"></option>
+                <option value="No, I rent" data-i18n="ow_rent"></option>
+                <option value="I'm the landlord/property manager" data-i18n="ow_land"></option>
               </select>
             </div>
             <div class="field">
-              <label for="city">City or postal code</label>
-              <input id="city" required placeholder="Montréal, QC" />
+              <label for="city" data-i18n="lbl_city"></label>
+              <input id="city" required data-i18n-ph="ph_city" placeholder="Montréal, QC" />
             </div>
           </div>
           <div class="field">
-            <label for="notes">Anything else about the project?</label>
-            <textarea id="notes" placeholder="Open concept, new appliances, matching an existing style, etc."></textarea>
+            <label for="notes" data-i18n="lbl_notes"></label>
+            <textarea id="notes" data-i18n-ph="ph_notes" placeholder="Open concept, new appliances, matching an existing style, etc."></textarea>
             <div class="subtle-reminder" id="subtleReminder">
               <span class="reminder-badge">!</span>
-              <span>Quick check before you submit — please make sure your name, email, and phone number above are accurate. That's how we'll reach you.</span>
+              <span data-i18n="reminder"></span>
             </div>
           </div>
 
-          <button type="submit" class="submit-btn" id="submitBtn">Request my consultation</button>
-          <p class="privacy-note">Your information is only used to follow up about this project.</p>
-          <p class="error-note" id="errorNote">Something went wrong reviewing your request — please try again.</p>
+          <button type="submit" class="submit-btn" id="submitBtn" data-i18n="submit"></button>
+          <p class="privacy-note" id="privacyNote"></p>
+          <p class="error-note" id="errorNote" data-i18n="error_note"></p>
         </form>
       </div>
 
       <!-- ============== HARD EXIT STATE (ownership / budget / timeline) ============== -->
       <div id="stepHardExit" style="display:none;">
         <div class="decline-box">
-          <div class="result-badge"><span class="dot"></span><span>Unable to proceed</span></div>
+          <div class="result-badge"><span class="dot"></span><span data-i18n="exit_badge"></span></div>
           <h3 id="hardExitHeadline"></h3>
           <p id="hardExitBody"></p>
-          <button class="submit-btn" id="hardExitBtn" style="margin-top:18px;">Close This Page</button>
+          <button class="submit-btn" id="hardExitBtn" style="margin-top:18px;" data-i18n="exit_btn"></button>
         </div>
       </div>
 
       <!-- ===================== STEP 2: CALENDAR (Cal.com) ===================== -->
       <div id="stepCalendar" style="display:none;">
-        <div class="step-label">STEP 2 OF 2</div>
-        <h2>Book your consultation</h2>
+        <div class="step-label" data-i18n="step2"></div>
+        <h2 data-i18n="cal_h2"></h2>
         <p class="sub" id="qualifiedHeadline"></p>
 
         <div class="confirming-as" id="confirmingAs"></div>
 
         <div id="calEmbed" style="width:100%; min-height:520px; overflow:auto;"></div>
-        <p class="privacy-note">Calendar not loading? <a id="calFallback" href="#" target="_blank" rel="noopener">Book here instead</a>.</p>
+        <p class="privacy-note" id="calFallbackWrap"></p>
       </div>
 
       <!-- ===================== BOOKED STATE ===================== -->
       <div id="stepBooked" style="display:none;">
         <div class="booked-state">
           <div class="check">✅</div>
-          <h3>You're booked</h3>
-          <p id="bookedDetails">Your consultation is booked. Check your email for the confirmation and calendar invite.</p>
+          <h3 data-i18n="booked_h3"></h3>
+          <p id="bookedDetails" data-i18n="booked_details"></p>
         </div>
       </div>
+    </div>
+  </div>
+
+  <footer class="foot">
+    <a href="/privacy.html" id="footPrivacy" target="_blank" rel="noopener"></a> &middot; <a href="#" id="cookieSettings" data-i18n="ck_settings"></a>
+  </footer>
+</div>
+
+<div class="cookie-banner" id="cookieBanner" role="dialog" aria-label="Cookie preferences">
+  <div class="cookie-card">
+    <p id="cookieText"></p>
+    <div class="cookie-actions">
+      <button type="button" id="cookieDecline" data-i18n="ck_decline"></button>
+      <button type="button" id="cookieAccept" data-i18n="ck_accept"></button>
     </div>
   </div>
 </div>
 
 <script>
-/* Fill in the business name in the header (keeps the brass "&" styling) */
-(function renderBrand() {
+/* Cookie consent: the Meta Pixel only loads after "Accept". */
+(function () {
+  const KEY = 'cookie_consent';
+  function getChoice() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
+  function setChoice(v) { try { localStorage.setItem(KEY, v); } catch (e) {} }
+  const banner = document.getElementById('cookieBanner');
+  function show() { banner.style.display = 'flex'; }
+  function hide() { banner.style.display = 'none'; }
+
+  document.getElementById('cookieAccept').addEventListener('click', function () {
+    setChoice('accepted'); hide(); loadMetaPixel();
+  });
+  document.getElementById('cookieDecline').addEventListener('click', function () {
+    const was = getChoice();
+    setChoice('declined'); hide();
+    if (was === 'accepted') location.reload(); // stops the pixel that was already running
+  });
+  document.getElementById('cookieSettings').addEventListener('click', function (e) {
+    e.preventDefault(); show();
+  });
+
+  const choice = getChoice();
+  if (choice === 'accepted') loadMetaPixel();
+  else if (choice !== 'declined') show();
+})();
+</script>
+
+<script>
+/* ============================================================
+   LANGUAGE (French / English)
+   Texts live in the I18N table. Dropdown VALUES stay in English on
+   purpose, so your lead emails and the qualification rules never change.
+   ============================================================ */
+const I18N = {
+ "en": {
+  "title_suffix": "Kitchen Consultation",
+  "serving": "Serving the Greater Montréal area",
+  "hero_h1": "Tell us about your kitchen. We'll tell you what's possible.",
+  "hero_lede": "Two minutes of questions gets you a real recommendation — not a generic quote. We only take on projects we're confident we can deliver well, so we ask a few things up front before booking a consultation.",
+  "blueprint_cap": "Every renovation starts as a plan on paper — this one starts with yours.",
+  "step1": "STEP 1 OF 2",
+  "form_h2": "Request your consultation",
+  "form_sub": "Fill this out and we'll follow up within one business day.",
+  "lbl_name": "Full name",
+  "ph_name": "Jordan Ellis",
+  "lbl_email": "Email",
+  "ph_email": "you@email.com",
+  "lbl_phone": "Phone number",
+  "ph_phone": "(514) 204-7788",
+  "lbl_timeline": "When would you like your kitchen renovated?",
+  "o_select_time": "Select a timeframe",
+  "t_asap": "As soon as possible",
+  "t_1_3": "Within 1-3 months",
+  "t_3_6": "3-6 months",
+  "t_explore": "Just exploring, no firm date",
+  "lbl_budget": "Estimated budget",
+  "o_select_range": "Select a range",
+  "b_under5": "Under $5,000",
+  "b_5_15": "$5,000-$15,000",
+  "b_15_35": "$15,000-$35,000",
+  "b_35_75": "$35,000-$75,000",
+  "b_75": "$75,000+",
+  "b_unsure": "Not sure yet",
+  "lbl_scope": "Scope of the project",
+  "o_select_scope": "Select scope",
+  "s_gut": "Full gut renovation",
+  "s_remodel": "Kitchen/Bathroom Remodeling",
+  "s_cab": "Cabinets and countertops only",
+  "s_cosm": "Cosmetic refresh (paint, hardware, fixtures)",
+  "s_other": "Other",
+  "lbl_owns": "Do you own this home?",
+  "o_select_one": "Select one",
+  "ow_yes": "Yes, I own it",
+  "ow_rent": "No, I rent",
+  "ow_land": "I'm the landlord/property manager",
+  "lbl_city": "City or postal code",
+  "ph_city": "Montréal, QC",
+  "lbl_notes": "Anything else about the project?",
+  "ph_notes": "Open concept, new appliances, matching an existing style, etc.",
+  "reminder": "Quick check before you submit — please make sure your name, email, and phone number above are accurate. That's how we'll reach you.",
+  "submit": "Request my consultation",
+  "privacy_note": "We use your information to follow up about this project and to measure our ads. See our {link}.",
+  "privacy_link": "Privacy Policy",
+  "error_note": "Something went wrong reviewing your request — please try again.",
+  "err_email": "Please enter a valid email address.",
+  "err_phone": "Please enter a valid U.S. or Canadian phone number.",
+  "exit_badge": "Unable to proceed",
+  "exit_btn": "Close This Page",
+  "exit_rent_h": "We're only able to work with homeowners",
+  "exit_rent_b": "Thank you for your interest in {name}. At this time, we work exclusively with homeowners renovating a property they own, so we're unable to move forward with your request.",
+  "exit_budget_h": "This falls below our minimum project size",
+  "exit_budget_b": "We appreciate you reaching out. Our minimum project size currently starts at $5,000, so we're not able to take this project on right now — we'd rather be upfront than take on work we can't give our full attention to.",
+  "exit_timeline_h": "Let's reconnect when timing is right",
+  "exit_timeline_b": "Thanks for reaching out. Right now we're focused on connecting with homeowners who are ready to move forward with a project, so this may not be the best time for us to work together. Feel free to reach back out once your timeline firms up.",
+  "step2": "STEP 2 OF 2",
+  "cal_h2": "Book your consultation",
+  "cal_headline": "Great — let's find a time to talk.",
+  "confirming": "Booking as",
+  "cal_fallback": "Calendar not loading? {link}.",
+  "cal_fallback_link": "Book here instead",
+  "booked_h3": "You're booked",
+  "booked_details": "Your consultation is booked. Check your email for the confirmation and calendar invite.",
+  "ck_text": "<b>Your privacy.</b> With your OK, we use the Meta (Facebook) Pixel to measure how well our ads work. It stays off unless you accept. {link}",
+  "ck_decline": "Decline",
+  "ck_accept": "Accept",
+  "ck_settings": "Cookie settings"
+ },
+ "fr": {
+  "title_suffix": "Consultation cuisine",
+  "serving": "Au service du Grand Montréal",
+  "hero_h1": "Parlez-nous de votre cuisine. Nous vous dirons ce qui est possible.",
+  "hero_lede": "Deux minutes de questions vous valent une vraie recommandation, et non une soumission générique. Nous n'acceptons que les projets que nous sommes certains de bien réaliser; c'est pourquoi nous posons d'abord quelques questions avant de réserver une consultation.",
+  "blueprint_cap": "Chaque rénovation commence par un plan sur papier — celle-ci commence par le vôtre.",
+  "step1": "ÉTAPE 1 DE 2",
+  "form_h2": "Demandez votre consultation",
+  "form_sub": "Remplissez ce formulaire et nous vous répondrons d'ici un jour ouvrable.",
+  "lbl_name": "Nom complet",
+  "ph_name": "Marie Tremblay",
+  "lbl_email": "Courriel",
+  "ph_email": "vous@courriel.com",
+  "lbl_phone": "Numéro de téléphone",
+  "ph_phone": "(514) 204-7788",
+  "lbl_timeline": "Quand souhaitez-vous faire rénover votre cuisine?",
+  "o_select_time": "Choisissez un délai",
+  "t_asap": "Dès que possible",
+  "t_1_3": "Dans 1 à 3 mois",
+  "t_3_6": "Dans 3 à 6 mois",
+  "t_explore": "Je m'informe, aucune date précise",
+  "lbl_budget": "Budget estimé",
+  "o_select_range": "Choisissez une fourchette",
+  "b_under5": "Moins de 5 000 $",
+  "b_5_15": "5 000 $ à 15 000 $",
+  "b_15_35": "15 000 $ à 35 000 $",
+  "b_35_75": "35 000 $ à 75 000 $",
+  "b_75": "75 000 $ et plus",
+  "b_unsure": "Je ne sais pas encore",
+  "lbl_scope": "Ampleur du projet",
+  "o_select_scope": "Choisissez l'ampleur",
+  "s_gut": "Rénovation complète (jusqu'à la structure)",
+  "s_remodel": "Rénovation de cuisine ou de salle de bain",
+  "s_cab": "Armoires et comptoirs seulement",
+  "s_cosm": "Rafraîchissement esthétique (peinture, quincaillerie, accessoires)",
+  "s_other": "Autre",
+  "lbl_owns": "Êtes-vous propriétaire de cette résidence?",
+  "o_select_one": "Choisissez une réponse",
+  "ow_yes": "Oui, je suis propriétaire",
+  "ow_rent": "Non, je suis locataire",
+  "ow_land": "Je suis le propriétaire bailleur ou le gestionnaire immobilier",
+  "lbl_city": "Ville ou code postal",
+  "ph_city": "Montréal (QC)",
+  "lbl_notes": "Autre chose à nous dire sur le projet?",
+  "ph_notes": "Aire ouverte, nouveaux électroménagers, style assorti à l'existant, etc.",
+  "reminder": "Petite vérification avant l'envoi : assurez-vous que votre nom, votre courriel et votre numéro de téléphone ci-dessus sont exacts. C'est ainsi que nous vous joindrons.",
+  "submit": "Demander ma consultation",
+  "privacy_note": "Nous utilisons vos renseignements pour assurer le suivi de ce projet et mesurer l'efficacité de nos publicités. Consultez notre {link}.",
+  "privacy_link": "Politique de confidentialité",
+  "error_note": "Un problème est survenu lors de l'examen de votre demande. Veuillez réessayer.",
+  "err_email": "Veuillez saisir une adresse courriel valide.",
+  "err_phone": "Veuillez saisir un numéro de téléphone canadien ou américain valide.",
+  "exit_badge": "Impossible de poursuivre",
+  "exit_btn": "Fermer cette page",
+  "exit_rent_h": "Nous travaillons seulement avec des propriétaires",
+  "exit_rent_b": "Merci de votre intérêt pour {name}. Pour le moment, nous travaillons exclusivement avec des propriétaires qui rénovent un bien qui leur appartient; nous ne pouvons donc pas donner suite à votre demande.",
+  "exit_budget_h": "Ce projet est sous notre seuil minimum",
+  "exit_budget_b": "Merci de nous avoir contactés. Notre seuil minimum pour un projet est actuellement de 5 000 $; nous ne pouvons donc pas prendre celui-ci en charge pour le moment. Nous préférons être transparents plutôt que d'accepter un travail auquel nous ne pourrions pas accorder toute notre attention.",
+  "exit_timeline_h": "Reprenons contact au bon moment",
+  "exit_timeline_b": "Merci de nous avoir écrit. Pour le moment, nous nous concentrons sur les propriétaires prêts à aller de l'avant avec leur projet; ce n'est donc peut-être pas le bon moment pour collaborer. N'hésitez pas à nous réécrire lorsque votre échéancier sera plus précis.",
+  "step2": "ÉTAPE 2 DE 2",
+  "cal_h2": "Réservez votre consultation",
+  "cal_headline": "Parfait, trouvons un moment pour discuter.",
+  "confirming": "Réservation au nom de",
+  "cal_fallback": "Le calendrier ne s'affiche pas? {link}.",
+  "cal_fallback_link": "Réservez ici",
+  "booked_h3": "Votre réservation est confirmée",
+  "booked_details": "Votre consultation est réservée. Consultez votre courriel pour la confirmation et l'invitation au calendrier.",
+  "ck_text": "<b>Votre vie privée.</b> Avec votre accord, nous utilisons le pixel Meta (Facebook) pour mesurer l'efficacité de nos publicités. Il reste désactivé si vous n'acceptez pas. {link}",
+  "ck_decline": "Refuser",
+  "ck_accept": "Accepter",
+  "ck_settings": "Paramètres des témoins"
+ }
+};
+
+let LANG = DEFAULT_LANG;
+(function initLang() {
+  let l = null;
+  try { const q = new URLSearchParams(window.location.search).get('lang'); if (q === 'fr' || q === 'en') l = q; } catch (e) {}
+  if (!l) { try { const st = localStorage.getItem('site_lang'); if (st === 'fr' || st === 'en') l = st; } catch (e) {} }
+  if (l) LANG = l;
+})();
+
+function t(key, vars) {
+  let str = (I18N[LANG] && I18N[LANG][key]) || I18N.en[key] || key;
+  if (vars) Object.keys(vars).forEach(k => { str = str.split('{' + k + '}').join(vars[k]); });
+  return str;
+}
+function brandFull() { return (LANG === 'fr' && BUSINESS_NAME_FR) ? BUSINESS_NAME_FR : BUSINESS_NAME; }
+function privacyUrl() { return LANG === 'fr' ? '/privacy-fr.html' : '/privacy.html'; }
+
+function renderBrand() {
   const el = document.getElementById('brandName');
   el.textContent = '';
-  BUSINESS_NAME.split(' & ').forEach((part, i) => {
+  brandFull().split(' & ').forEach((part, i) => {
     if (i > 0) {
       const amp = document.createElement('span');
       amp.textContent = '&';
@@ -389,7 +671,54 @@ document.title = BUSINESS_NAME + " — Kitchen Consultation";
     }
     el.append(part);
   });
-})();
+}
+
+let currentExit = null;
+function renderExit() {
+  if (!currentExit) return;
+  document.getElementById('hardExitHeadline').textContent = t('exit_' + currentExit + '_h');
+  document.getElementById('hardExitBody').textContent = t('exit_' + currentExit + '_b', { name: brandFull() });
+}
+
+function renderCalendarTexts() {
+  document.getElementById('qualifiedHeadline').textContent = t('cal_headline');
+  if (lead && lead.name) {
+    document.getElementById('confirmingAs').innerHTML =
+      escapeHtml(t('confirming')) + ` <b>${escapeHtml(lead.name)}</b> (${escapeHtml(lead.email)})`;
+  }
+}
+
+function applyLang() {
+  document.documentElement.lang = LANG;
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+
+  const toggle = document.getElementById('langToggle');
+  toggle.textContent = LANG === 'fr' ? 'English' : 'Français';
+  toggle.setAttribute('lang', LANG === 'fr' ? 'en' : 'fr');
+
+  document.title = brandFull() + ' — ' + t('title_suffix');
+  renderBrand();
+
+  const priv = privacyUrl();
+  const privLink = `<a href="${priv}" target="_blank" rel="noopener">${t('privacy_link')}</a>`;
+  document.getElementById('privacyNote').innerHTML = t('privacy_note').replace('{link}', privLink);
+  document.getElementById('cookieText').innerHTML = t('ck_text').replace('{link}', privLink);
+  const foot = document.getElementById('footPrivacy');
+  foot.href = priv; foot.textContent = t('privacy_link');
+  document.getElementById('calFallbackWrap').innerHTML = t('cal_fallback').replace('{link}',
+    `<a id="calFallback" href="https://cal.com/${CAL_LINK}" target="_blank" rel="noopener">${t('cal_fallback_link')}</a>`);
+
+  renderExit();
+  renderCalendarTexts();
+}
+
+document.getElementById('langToggle').addEventListener('click', () => {
+  LANG = LANG === 'fr' ? 'en' : 'fr';
+  try { localStorage.setItem('site_lang', LANG); } catch (e) {}
+  applyLang();
+});
+
 /* ============================================================
    STATE
    ============================================================ */
@@ -492,36 +821,27 @@ document.getElementById('leadForm').addEventListener('change', checkFormComplete
    IMMEDIATE HARD-EXIT GATES (fire the moment the option is picked,
    before the rest of the form is even filled out)
    ============================================================ */
-function showHardExit(headline, body) {
-  document.getElementById('hardExitHeadline').textContent = headline;
-  document.getElementById('hardExitBody').textContent = body;
+function showHardExit(kind) {
+  currentExit = kind;
+  renderExit();
   showStep('hardExit');
 }
 
 document.getElementById('owns').addEventListener('change', function () {
   if (this.value === "No, I rent") {
-    showHardExit(
-      "We're only able to work with homeowners",
-      `Thank you for your interest in ${BUSINESS_NAME}. At this time, we work exclusively with homeowners renovating a property they own, so we're unable to move forward with your request.`
-    );
+    showHardExit('rent');
   }
 });
 
 document.getElementById('budget').addEventListener('change', function () {
   if (this.value === "Under $5,000") {
-    showHardExit(
-      "This falls below our minimum project size",
-      "We appreciate you reaching out. Our minimum project size currently starts at $5,000, so we're not able to take this project on right now — we'd rather be upfront than take on work we can't give our full attention to."
-    );
+    showHardExit('budget');
   }
 });
 
 document.getElementById('timeline').addEventListener('change', function () {
   if (this.value === "Just exploring, no firm date") {
-    showHardExit(
-      "Let's reconnect when timing is right",
-      "Thanks for reaching out. Right now we're focused on connecting with homeowners who are ready to move forward with a project, so this may not be the best time for us to work together. Feel free to reach back out once your timeline firms up."
-    );
+    showHardExit('timeline');
   }
 });
 
@@ -554,11 +874,11 @@ function handleSubmit(e) {
   const phoneVal = document.getElementById('phone').value;
   let hasFieldError = false;
   if (!isValidEmailFormat(emailVal)) {
-    showFieldError('emailError', 'Please enter a valid email address.');
+    showFieldError('emailError', t('err_email'));
     hasFieldError = true;
   }
   if (!isValidNANPPhone(phoneVal)) {
-    showFieldError('phoneError', 'Please enter a valid U.S. or Canadian phone number.');
+    showFieldError('phoneError', t('err_phone'));
     hasFieldError = true;
   }
   if (hasFieldError) return;
@@ -579,24 +899,15 @@ function handleSubmit(e) {
   // on-change gates above, but they're re-checked here in case of
   // programmatic changes (e.g. browser autofill skipping events).
   if (HARD_DISQUALIFY_BUDGETS.includes(lead.budget)) {
-    showHardExit(
-      "This falls below our minimum project size",
-      "We appreciate you reaching out. Our minimum project size currently starts at $5,000, so we're not able to take this project on right now — we'd rather be upfront than take on work we can't give our full attention to."
-    );
+    showHardExit('budget');
     return;
   }
   if (lead.owns === "No, I rent") {
-    showHardExit(
-      "We're only able to work with homeowners",
-      `Thank you for your interest in ${BUSINESS_NAME}. At this time, we work exclusively with homeowners renovating a property they own, so we're unable to move forward with your request.`
-    );
+    showHardExit('rent');
     return;
   }
   if (lead.timeline === "Just exploring, no firm date") {
-    showHardExit(
-      "Let's reconnect when timing is right",
-      "Thanks for reaching out. Right now we're focused on connecting with homeowners who are ready to move forward with a project, so this may not be the best time for us to work together. Feel free to reach back out once your timeline firms up."
-    );
+    showHardExit('timeline');
     return;
   }
 
@@ -702,10 +1013,7 @@ function loadCalEmbed() {
 }
 
 function renderCalendarStep() {
-  document.getElementById('qualifiedHeadline').textContent = "Great — let's find a time to talk.";
-  document.getElementById('confirmingAs').innerHTML =
-    `Booking as <b>${escapeHtml(lead.name)}</b> (${escapeHtml(lead.email)})`;
-  document.getElementById('calFallback').href = 'https://cal.com/' + CAL_LINK;
+  renderCalendarTexts();
 
   // Optional: uncomment if you want Meta to see "qualified, entered
   // booking step" as its own signal before a slot is actually confirmed.
@@ -731,6 +1039,9 @@ function fireLeadEvent() {
     // Pixel base code in <head> (see the comment up top) to activate this.
   } catch (e) { /* fail silently — never block the booked confirmation on pixel issues */ }
 }
+
+/* Apply the chosen language to the whole page */
+applyLang();
 </script>
 </body>
 </html>
