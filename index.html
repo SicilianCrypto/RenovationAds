@@ -675,15 +675,8 @@ function loadCalEmbed() {
 
   Cal("init", "consult", { origin: "https://app.cal.com" });
 
-  // Pass what the homeowner already told us, so they don't retype it
-  const notes = [
-    lead.phone ? 'Phone: ' + lead.phone : '',
-    lead.city ? 'City: ' + lead.city : '',
-    lead.scope ? 'Scope: ' + lead.scope : '',
-    lead.budget ? 'Budget: ' + lead.budget : '',
-    lead.timeline ? 'Timeline: ' + lead.timeline : '',
-    lead.notes ? 'Notes: ' + lead.notes : ''
-  ].filter(Boolean).join('\n');
+  // Only pass along what the homeowner typed in the additional notes box
+  const notes = (lead.notes && lead.notes.trim().toLowerCase() !== 'none provided') ? lead.notes.trim() : '';
 
   Cal.ns.consult("inline", {
     elementOrSelector: "#calEmbed",
@@ -711,7 +704,7 @@ function loadCalEmbed() {
 function renderCalendarStep() {
   document.getElementById('qualifiedHeadline').textContent = "Great — let's find a time to talk.";
   document.getElementById('confirmingAs').innerHTML =
-    `Booking as <b>${escapeHtml(lead.name)}</b> — <b>${escapeHtml(lead.email)}</b>`;
+    `Booking as <b>${escapeHtml(lead.name)}</b> (${escapeHtml(lead.email)})`;
   document.getElementById('calFallback').href = 'https://cal.com/' + CAL_LINK;
 
   // Optional: uncomment if you want Meta to see "qualified, entered
