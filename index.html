@@ -16,6 +16,10 @@ const BUSINESS_NAME = "Kitchen & Bath Renovations";
    "https://formspree.io/f/abc123xyz"  -- leads are emailed to you.
    Leave it as-is and the page still works; it just won't email leads. */
 const FORMSPREE_URL = "https://formspree.io/f/xkjgeywq";
+
+/* Your Cal.com booking link: just the part after cal.com/
+   e.g. "renovationads/meeting". Change this per client. */
+const CAL_LINK = "renovationads/meeting";
 /* ============================================================ */
 document.title = BUSINESS_NAME + " — Kitchen Consultation";
 </script>
@@ -345,11 +349,10 @@ document.title = BUSINESS_NAME + " — Kitchen Consultation";
           <h3 id="hardExitHeadline"></h3>
           <p id="hardExitBody"></p>
           <button class="submit-btn" id="hardExitBtn" style="margin-top:18px;">Close This Page</button>
-          <p class="privacy-note">If this window doesn't close automatically, feel free to close this browser tab.</p>
         </div>
       </div>
 
-      <!-- ===================== STEP 2: CALENDAR ===================== -->
+      <!-- ===================== STEP 2: CALENDAR (Cal.com) ===================== -->
       <div id="stepCalendar" style="display:none;">
         <div class="step-label">STEP 2 OF 2</div>
         <h2>Book your consultation</h2>
@@ -357,15 +360,8 @@ document.title = BUSINESS_NAME + " — Kitchen Consultation";
 
         <div class="confirming-as" id="confirmingAs"></div>
 
-        <div class="cal-nav">
-          <button id="prevMonth">‹</button>
-          <div class="cal-month" id="monthLabel"></div>
-          <button id="nextMonth">›</button>
-        </div>
-        <div class="dow-row"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
-        <div class="day-grid" id="dayGrid"></div>
-
-        <div id="rightPanel"><div class="empty-note">Select a date to see available times.</div></div>
+        <div id="calEmbed" style="width:100%; min-height:520px; overflow:auto;"></div>
+        <p class="privacy-note">Calendar not loading? <a id="calFallback" href="#" target="_blank" rel="noopener">Book here instead</a>.</p>
       </div>
 
       <!-- ===================== BOOKED STATE ===================== -->
@@ -373,7 +369,7 @@ document.title = BUSINESS_NAME + " — Kitchen Consultation";
         <div class="booked-state">
           <div class="check">✅</div>
           <h3>You're booked</h3>
-          <p id="bookedDetails"></p>
+          <p id="bookedDetails">Your consultation is booked. Check your email for the confirmation and calendar invite.</p>
         </div>
       </div>
     </div>
@@ -398,9 +394,6 @@ document.title = BUSINESS_NAME + " — Kitchen Consultation";
    STATE
    ============================================================ */
 const lead = {}; // populated from the form on submit
-const cal = { monthOffset: 0, selectedDate: null, selectedTime: null };
-const TIMES = ["9:00 AM","9:30 AM","10:00 AM","10:30 AM","11:00 AM","11:30 AM","1:00 PM","1:30 PM","2:00 PM","2:30 PM","3:00 PM","3:30 PM","4:00 PM","4:30 PM"];
-const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
 // Budgets below this are hard-disqualified — no AI call is spent on them.
 const HARD_DISQUALIFY_BUDGETS = ["Under $5,000"];
@@ -533,7 +526,18 @@ document.getElementById('timeline').addEventListener('change', function () {
 });
 
 document.getElementById('hardExitBtn').addEventListener('click', () => {
-  try { window.close(); } catch (e) { /* some browsers block this — the fallback note covers it */ }
+  // 1) Works if the page was opened by a script / some in-app browsers
+  try { window.close(); } catch (e) {}
+  // 2) Browsers usually block close() on a normally opened tab, so if we're
+  //    still here, send the visitor back to where they came from (e.g. Facebook),
+  //    or to a blank page if there is nothing to go back to.
+  setTimeout(function () {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.replace('about:blank');
+    }
+  }, 250);
 });
 
 /* ============================================================
@@ -634,24 +638,11 @@ function sendToFormspree(stage, extra) {
 document.getElementById('leadForm').addEventListener('submit', handleSubmit);
 
 /* ============================================================
-   STEP 2 -> CALENDAR
+   STEP 2 -> CALENDAR (Cal.com inline embed)
+   Availability comes from your Cal.com account, which syncs with
+   the Google/Outlook calendar you connected there.
    ============================================================ */
-function renderCalendarStep() {
-  document.getElementById('qualifiedHeadline').textContent = "Great — let's find a time to talk.";
-  document.getElementById('confirmingAs').innerHTML =
-    `Booking as <b>${escapeHtml(lead.name)}</b> — <b>${escapeHtml(lead.email)}</b>`;
-
-  // Optional: uncomment if you want Meta to see "qualified, entered
-  // booking step" as its own signal before a slot is actually confirmed.
-  // if (typeof fbq === 'function') fbq('trackCustom', 'QualifiedEnteredBooking');
-
-  cal.monthOffset = 0;
-  cal.selectedDate = null;
-  cal.selectedTime = null;
-  showStep('calendar');
-  renderCalendar();
-  renderRightPanel();
-}
+let calLoaded = false;
 
 function escapeHtml(str) {
   const d = document.createElement('div');
@@ -659,97 +650,81 @@ function escapeHtml(str) {
   return d.innerHTML;
 }
 
-function today() { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }
+function loadCalEmbed() {
+  if (calLoaded) return;
+  calLoaded = true;
 
-function renderCalendar() {
-  const base = today();
-  const viewDate = new Date(base.getFullYear(), base.getMonth() + cal.monthOffset, 1);
-  document.getElementById('monthLabel').textContent = MONTH_NAMES[viewDate.getMonth()] + " " + viewDate.getFullYear();
-  document.getElementById('prevMonth').disabled = cal.monthOffset <= 0;
-  document.getElementById('nextMonth').disabled = cal.monthOffset >= 2;
+  // Official Cal.com embed loader
+  (function (C, A, L) {
+    let p = function (a, ar) { a.q.push(ar); };
+    let d = C.document;
+    C.Cal = C.Cal || function () {
+      let cal = C.Cal; let ar = arguments;
+      if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; }
+      if (ar[0] === L) {
+        const api = function () { p(api, arguments); };
+        const namespace = ar[1];
+        api.q = api.q || [];
+        if (typeof namespace === "string") { cal.ns[namespace] = cal.ns[namespace] || api; p(cal.ns[namespace], ar); p(cal, ["initNamespace", namespace]); }
+        else p(cal, ar);
+        return;
+      }
+      p(cal, ar);
+    };
+  })(window, "https://app.cal.com/embed/embed.js", "init");
 
-  const grid = document.getElementById('dayGrid');
-  grid.innerHTML = '';
-  const firstDow = viewDate.getDay();
-  const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
+  Cal("init", "consult", { origin: "https://app.cal.com" });
 
-  for (let i = 0; i < firstDow; i++) {
-    const b = document.createElement('button');
-    b.className = 'empty'; b.disabled = true;
-    grid.appendChild(b);
-  }
-  for (let day = 1; day <= daysInMonth; day++) {
-    const d = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
-    const btn = document.createElement('button');
-    btn.textContent = day;
-    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-    const isPast = d < base;
-    if (isWeekend || isPast) {
-      btn.disabled = true;
-    } else {
-      btn.addEventListener('click', () => selectDate(d));
+  // Pass what the homeowner already told us, so they don't retype it
+  const notes = [
+    lead.phone ? 'Phone: ' + lead.phone : '',
+    lead.city ? 'City: ' + lead.city : '',
+    lead.scope ? 'Scope: ' + lead.scope : '',
+    lead.budget ? 'Budget: ' + lead.budget : '',
+    lead.timeline ? 'Timeline: ' + lead.timeline : '',
+    lead.notes ? 'Notes: ' + lead.notes : ''
+  ].filter(Boolean).join('\n');
+
+  Cal.ns.consult("inline", {
+    elementOrSelector: "#calEmbed",
+    calLink: CAL_LINK,
+    layout: "month_view",
+    config: { name: lead.name || '', email: lead.email || '', notes: notes, theme: "auto" }
+  });
+  Cal.ns.consult("ui", { hideEventTypeDetails: false, layout: "month_view" });
+
+  // Fires when the homeowner actually confirms a time. THIS is "a lead".
+  Cal.ns.consult("on", {
+    action: "bookingSuccessful",
+    callback: function (e) {
+      let when = '';
+      try {
+        const d = e && e.detail && e.detail.data;
+        if (d && d.date) when = d.date;
+      } catch (err) {}
+      sendToFormspree('BOOKED a time', { booked_slot: when });
+      fireLeadEvent();
     }
-    if (cal.selectedDate && d.getTime() === cal.selectedDate.getTime()) btn.classList.add('selected');
-    grid.appendChild(btn);
-  }
-}
-
-function selectDate(d) {
-  cal.selectedDate = d;
-  cal.selectedTime = null;
-  renderCalendar();
-  renderRightPanel();
-}
-
-function selectTime(t) {
-  cal.selectedTime = t;
-  renderRightPanel();
-}
-
-function renderRightPanel() {
-  const panel = document.getElementById('rightPanel');
-  if (!cal.selectedDate) {
-    panel.innerHTML = '<div class="empty-note">Select a date to see available times.</div>';
-    return;
-  }
-  let html = `<div class="slots-title">${formatDate(cal.selectedDate)}</div><div class="slot-list">`;
-  TIMES.forEach(t => {
-    html += `<button class="${cal.selectedTime === t ? 'selected' : ''}" data-time="${t}">${t}</button>`;
   });
-  html += `</div>`;
-  if (cal.selectedTime) {
-    html += `<div class="confirm-box"><button class="submit-btn" id="confirmBtn">Confirm booking</button></div>`;
-  }
-  panel.innerHTML = html;
-
-  panel.querySelectorAll('.slot-list button').forEach(btn => {
-    btn.addEventListener('click', () => selectTime(btn.dataset.time));
-  });
-  const confirmBtn = document.getElementById('confirmBtn');
-  if (confirmBtn) confirmBtn.addEventListener('click', confirmBooking);
 }
 
-function formatDate(d) {
-  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-}
+function renderCalendarStep() {
+  document.getElementById('qualifiedHeadline').textContent = "Great — let's find a time to talk.";
+  document.getElementById('confirmingAs').innerHTML =
+    `Booking as <b>${escapeHtml(lead.name)}</b> — <b>${escapeHtml(lead.email)}</b>`;
+  document.getElementById('calFallback').href = 'https://cal.com/' + CAL_LINK;
 
-document.getElementById('prevMonth').addEventListener('click', () => { if (cal.monthOffset > 0) { cal.monthOffset--; renderCalendar(); } });
-document.getElementById('nextMonth').addEventListener('click', () => { if (cal.monthOffset < 2) { cal.monthOffset++; renderCalendar(); } });
+  // Optional: uncomment if you want Meta to see "qualified, entered
+  // booking step" as its own signal before a slot is actually confirmed.
+  // if (typeof fbq === 'function') fbq('trackCustom', 'QualifiedEnteredBooking');
+
+  showStep('calendar');
+  loadCalEmbed();
+}
 
 /* ============================================================
-   BOOKING CONFIRMED -> THIS is "a lead"
+   META PIXEL "Lead" EVENT: only after a booking is confirmed
    ============================================================ */
-function confirmBooking() {
-  document.getElementById('bookedDetails').textContent =
-    `${formatDate(cal.selectedDate)} at ${cal.selectedTime}. We'll be in touch to confirm the details.`;
-  showStep('booked');
-  sendToFormspree('BOOKED a time', {
-    requested_date: formatDate(cal.selectedDate),
-    requested_time: cal.selectedTime
-  });
-  fireLeadEvent();
-}
-
 function fireLeadEvent() {
   try {
     if (typeof fbq === 'function') {
